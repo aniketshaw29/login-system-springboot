@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ╔══════════════════════════════════════════════════════════════════════════╗
+  ║                          pom.xml — Maven Build File                     ║
+  ╚══════════════════════════════════════════════════════════════════════════╝
+
+  WHAT IS THIS FILE?
+  ──────────────────
+  Maven is Java's "package manager + build tool" (like npm for Node.js).
+  pom.xml = Project Object Model. It tells Maven:
+    1. What your project IS (group, name, version)
+    2. What LIBRARIES it depends on
+    3. How to BUILD it
+
+  THINK OF IT LIKE: a grocery list that Maven uses to download all the
+  ingredients (JAR files) your project needs to work.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      ┌──────────────────────────────────────────────────────────────────┐
+      │ PARENT: Spring Boot Starter Parent                               │
+      │                                                                  │
+      │ By setting spring-boot-starter-parent as our parent, we get:    │
+      │  • Pre-configured versions for ALL Spring dependencies           │
+      │  • No need to specify versions manually (they're compatible)     │
+      │  • Smart defaults for compilation, testing, packaging            │
+      │                                                                  │
+      │ ANALOGY: Like inheriting a toolbox from a pro — already set up  │
+      └──────────────────────────────────────────────────────────────────┘
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.4</version>
+        <relativePath/> <!-- look up the parent from Maven Central, not local -->
+    </parent>
+
+    <!--
+      Project Identity
+      ────────────────
+      groupId    = your company/domain in reverse (like a Java package)
+      artifactId = the name of THIS specific project
+      version    = current version (SNAPSHOT = still in development)
+    -->
+    <groupId>com.example</groupId>
+    <artifactId>login-system</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>login-system</name>
+    <description>A complete Spring Boot login system with JWT authentication</description>
+
+    <properties>
+        <!-- Use Java 17 (LTS version, works great with Spring Boot 3) -->
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- ================================================================
+          DEPENDENCY 1: Spring Boot Web Starter
+          ────────────────────────────────────────────────────────────────
+          This one dependency gives you:
+            • Embedded Tomcat server (run app without installing Tomcat)
+            • Spring MVC (REST controllers, request mapping)
+            • Jackson (JSON serialization/deserialization)
+
+          ANALOGY: Like installing a "web server kit" — everything you need
+          to handle HTTP requests right out of the box.
+        ================================================================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 2: Spring Security Starter
+          ────────────────────────────────────────────────────────────────
+          This adds the security layer to your application:
+            • Authentication (who are you?)
+            • Authorization (what are you allowed to do?)
+            • CSRF protection, password encoding, session management
+
+          NOTE: As soon as you add this, Spring Boot auto-protects ALL
+          your endpoints! You'll see a login page if you try to access
+          anything without proper config. We'll configure it later.
+        ================================================================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 3: Spring Data JPA Starter
+          ────────────────────────────────────────────────────────────────
+          JPA = Java Persistence API (the standard for ORM in Java)
+          Spring Data JPA wraps Hibernate (the actual ORM implementation)
+
+          This lets you:
+            • Define Java classes that map to database tables (@Entity)
+            • Write zero SQL for basic operations (save, find, delete)
+            • Use repositories (interfaces) as DAO layers
+
+          ANALOGY: Instead of writing "INSERT INTO users ...", you just
+          call userRepository.save(user) — Spring handles the SQL.
+        ================================================================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 4: H2 Database
+          ────────────────────────────────────────────────────────────────
+          H2 is an in-memory database — it runs INSIDE your Java app.
+          No need to install MySQL/PostgreSQL for development!
+
+          PROS:  Zero setup, fast, great for learning and testing
+          CONS:  Data disappears when app restarts (unless configured)
+          scope="runtime" = only needed when the app is RUNNING, not
+          needed at compile time.
+
+          In production, you'd swap this for PostgreSQL or MySQL.
+        ================================================================ -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 5: Validation Starter
+          ────────────────────────────────────────────────────────────────
+          Provides Bean Validation (JSR-380) annotations:
+            • @NotNull, @NotBlank, @Email
+            • @Size(min=8, max=100)
+            • @Pattern(regexp="...")
+
+          With @Valid on your controller method, Spring automatically
+          validates incoming request bodies before they reach your code.
+          Much cleaner than writing "if (email == null || email.isEmpty())"
+        ================================================================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 6: Lombok
+          ────────────────────────────────────────────────────────────────
+          Lombok is a code generation tool. It uses annotations to
+          auto-generate boilerplate Java code at COMPILE TIME.
+
+          Instead of writing:
+            private String name;
+            public String getName() { return name; }
+            public void setName(String name) { this.name = name; }
+
+          You write:
+            @Getter @Setter
+            private String name;
+
+          Common annotations we'll use:
+            @Data         = @Getter + @Setter + @ToString + @EqualsAndHashCode
+            @Builder      = Builder pattern (User.builder().name("...").build())
+            @NoArgsConstructor = public User() {}
+            @AllArgsConstructor = public User(Long id, String name, ...) {}
+        ================================================================ -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 7–9: JWT (JSON Web Token) Libraries
+          ────────────────────────────────────────────────────────────────
+          JWT is the token format we'll use for authentication.
+
+          HOW JWT WORKS:
+          1. User logs in with username + password
+          2. Server verifies credentials, creates a JWT token
+          3. Server sends token back to the user
+          4. User sends token in every future request (Authorization header)
+          5. Server validates token without querying the database each time
+
+          JWT STRUCTURE (three parts, separated by dots):
+            xxxxx.yyyyy.zzzzz
+             │       │       └── Signature (proves it wasn't tampered with)
+             │       └────────── Payload (data: userId, email, expiry)
+             └────────────────── Header (algorithm: HS256)
+
+          We need 3 libraries:
+            jjwt-api      = the interfaces (compile time)
+            jjwt-impl     = the actual implementation (runtime only)
+            jjwt-jackson  = Jackson integration for JSON parsing (runtime)
+        ================================================================ -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.3</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.3</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ================================================================
+          DEPENDENCY 10: Spring Boot Test
+          ────────────────────────────────────────────────────────────────
+          Provides testing tools: JUnit 5, Mockito, Spring test context.
+          scope="test" = only used during testing, not in the final jar.
+        ================================================================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Security test utilities (MockMvc + security) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+              Spring Boot Maven Plugin
+              ────────────────────────
+              Enables "mvn spring-boot:run" to start the application.
+              Also packages everything into a single executable JAR
+              (fat/uber jar) that includes all dependencies.
+
+              Exclude Lombok from the final JAR (it's only needed at
+              compile time, not at runtime).
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
