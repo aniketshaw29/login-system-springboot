@@ -48,6 +48,7 @@ package com.example.loginsystem.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import com.example.loginsystem.exception.InvalidTokenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -189,11 +190,21 @@ public class JwtUtil {
      * uses a different secret key, it throws an exception.
      */
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey()) // set the key to verify the signature
-                .build()
-                .parseSignedClaims(token)   // parse + verify
-                .getPayload();              // extract the payload (claims)
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (ExpiredJwtException e) {
+            throw new InvalidTokenException("Token has expired", e);
+        } catch (MalformedJwtException e) {
+            throw new InvalidTokenException("Invalid token format", e);
+        } catch (SignatureException e) {
+            throw new InvalidTokenException("Token signature is invalid", e);
+        } catch (JwtException e) {
+            throw new InvalidTokenException("Token is invalid", e);
+        }
     }
 
     // =========================================================================

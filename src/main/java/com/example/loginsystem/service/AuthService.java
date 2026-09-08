@@ -32,6 +32,8 @@ import com.example.loginsystem.dto.AuthResponse;
 import com.example.loginsystem.dto.LoginRequest;
 import com.example.loginsystem.dto.RegisterRequest;
 import com.example.loginsystem.entity.User;
+import com.example.loginsystem.exception.InvalidCredentialsException;
+import com.example.loginsystem.exception.UserAlreadyExistsException;
 import com.example.loginsystem.repository.UserRepository;
 import com.example.loginsystem.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -85,12 +87,12 @@ public class AuthService {
         // This gives a clear error message instead of a DB constraint violation.
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException(
+            throw new UserAlreadyExistsException(
                     "Username '" + request.getUsername() + "' is already taken");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException(
+            throw new UserAlreadyExistsException(
                     "Email '" + request.getEmail() + "' is already registered");
         }
 
@@ -210,7 +212,7 @@ public class AuthService {
             // (an attacker can enumerate valid usernames by testing responses).
             // Generic "Invalid credentials" is best practice.
             log.warn("Failed login attempt for username: {}", request.getUsername());
-            throw new RuntimeException("Invalid username or password");
+            throw new InvalidCredentialsException("Invalid username or password");
         }
     }
 

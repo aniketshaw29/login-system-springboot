@@ -60,6 +60,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.example.loginsystem.exception.InvalidTokenException;
 
 import java.io.IOException;
 
@@ -124,11 +125,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String username;
         try {
             username = jwtUtil.extractUsername(jwt);
-        } catch (Exception e) {
+        } catch (InvalidTokenException e) {
             // Token is invalid (malformed, expired, wrong signature, etc.)
-            // Log it (good for debugging/monitoring) and let the request continue
-            // without authentication. Spring Security will reject it later.
-            log.warn("Could not extract username from JWT: {}", e.getMessage());
+            log.debug("Invalid token: {}", e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
